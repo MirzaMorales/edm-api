@@ -1,0 +1,1 @@
+//! aqui va la configuracion de variables de entorno y contantes ademas configuraciones globales

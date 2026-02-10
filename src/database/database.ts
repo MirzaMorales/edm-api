@@ -1,0 +1,1 @@
+//! conexion y migraciones de la base de datos BD(TypeORM, Prisma, Mongoose)
