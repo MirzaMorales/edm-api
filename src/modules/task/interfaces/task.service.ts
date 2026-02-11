@@ -1,25 +1,46 @@
 import { Injectable } from "@nestjs/common";
+import { CreateTaskDTO } from "src/modules/auth/dto/create-task.dto";
 
 @Injectable()
 export class TaskService {
 
-    public getTasks(): string{
-        return "Lista de tareas";
+    private tasks: any[] = [];
+
+    public getTasks(): any[] {
+        return this.tasks;
     }
 
-    public getTaskById(id: number): string{
-        return `Tarea con id: ${id}`;
+    public getTaskById(id: number): any[]{
+        var tarea = this.tasks.find(t => t.id === id);
+        return tarea;
     }
 
-    public insertTask(task: any): any{
-        return task
+    public insertTask(task: CreateTaskDTO): any{
+        var id = this.tasks.length + 1;
+        var position = this.tasks.push({
+            id, 
+            ...task
+        });
+        // task.id = id;
+        return this.tasks[position - 1];
     }
 
     public updateTask(id: number, task: any): any{
-        return task;
+        const taskUpdated = this.tasks.map((data) =>{
+            if(data.id === id){
+                if(task.name) data.name = task.name;
+                if(task.description) data.description = task.description;
+                if(task.priority != null) data.priority = task.priority;
+                return data;
+            }
+        });
+
+        return taskUpdated;
     }
 
     public deleteTask(id: number): string{
+        const array = this.tasks.filter((data) => data.id != id);
+        this.tasks = array;
         return `Tarea con id: ${id} eliminada`;
     }
 
