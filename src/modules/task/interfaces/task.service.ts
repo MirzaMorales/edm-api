@@ -1,41 +1,39 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { Client } from "pg";
 import { CreateTaskDTO } from "src/modules/auth/dto/create-task.dto";
 
 @Injectable()
 export class TaskService {
 
+    constructor(
+        @Inject('DATABASE_CONNECTION') private db: Client
+    ) { }
+
     private tasks: any[] = [];
 
-    public getTasks(): any[] {
-        return this.tasks;
+    async getTasks(): Promise<any[]> {
+        const query = 'SELECT * FROM tasks';
+        const result = await this.db.query(query);
+        return result.rows;
     }
 
-    public getTaskById(id: number): any[]{
-        var tarea = this.tasks.find(t => t.id === id);
-        return tarea;
+    public async getTaskById(id: number): Promise<any>{
+        const query = 'SELECT * FROM tasks WHERE id = $1';
+        const result = await this.db.query(query, [id]);
+        return result.rows;
     }
 
-    public insertTask(task: CreateTaskDTO): any{
-        var id = this.tasks.length + 1;
-        var position = this.tasks.push({
-            id, 
-            ...task
-        });
-        // task.id = id;
-        return this.tasks[position - 1];
+    public async insertTask(task: CreateTaskDTO): Promise<number>{
+        const query = 'INSERT INTO tasks (name, description, priority, user_id) VALUES ($1, $2, $3, $4) RETURNING *';
+
+        const result = await this.db.query(query, [task.name, task.description, task.priority, task.user_id]);
+        return result.oid;
     }
 
-    public updateTask(id: number, task: any): any{
-        const taskUpdated = this.tasks.map((data) =>{
-            if(data.id === id){
-                if(task.name) data.name = task.name;
-                if(task.description) data.description = task.description;
-                if(task.priority != null) data.priority = task.priority;
-                return data;
-            }
-        });
-
-        return taskUpdated;
+    public async updateTask(id: number, task: any): Promise<any>{
+        const query = 'UPDATE tasks SET name = $1, description = $2, priority = $3 WHERE id = $4 RETURNING *';
+        const result = await this.db.query(query, [task.name, task.description, task.priority, id]);
+        return result.rows[0];
     }
 
     public deleteTask(id: number): string{

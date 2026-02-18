@@ -8,28 +8,26 @@ export class TaskController {
     constructor( private readonly taskSvc: TaskService){}
 
     @Get("/get-tasks")
-    public getTasks(): any[] {
-        return this.taskSvc.getTasks();
+    public async getTasks(): Promise<any[]> {
+        return await this.taskSvc.getTasks();
     }
 
     @Get(":id")
-    public getTaskById(@Param("id", ParseIntPipe) id: number): any{   
-        var task = this.taskSvc.getTaskById(id);
+    public async getTaskById(@Param("id", ParseIntPipe) id: number): Promise<any>{   
+        var task = await this.taskSvc.getTaskById(id);
 
-        if(task) 
-            return task;
-        else 
-            throw new HttpException(`Tarea con id: ${id} no encontrada`, 404);
+        if(task && task.length > 0) return task;
+        else throw new HttpException(`Task Not Found`, 404);
     }
 
     @Post("/insert-task")
-    public insertTask(@Body() task: CreateTaskDTO): any{
-        return this.taskSvc.insertTask(task);
+    public async insertTask(@Body() task: CreateTaskDTO): Promise<any>{
+        return await this.taskSvc.insertTask(task);
     }
 
     @Put(":id")
-    public updateTask(@Param("id", ParseIntPipe) id: number, @Body()task: any): any{      
-        return this.taskSvc.updateTask(id, task);
+    public async updateTask(@Param("id", ParseIntPipe) id: number, @Body()task: any): Promise<any>{      
+        return await this.taskSvc.updateTask(id, task);
     }
 
     @Delete(":id")
