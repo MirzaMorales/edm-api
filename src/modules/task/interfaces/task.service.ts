@@ -1,6 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Client } from "pg";
 import { CreateTaskDTO } from "src/modules/auth/dto/create-task.dto";
+import { UpdateTaskDto } from "src/modules/auth/dto/update.task.dto";
+import { Task } from "src/modules/auth/entities/task.entity";
 
 @Injectable()
 export class TaskService {
@@ -11,16 +13,16 @@ export class TaskService {
 
     private tasks: any[] = [];
 
-    async getTasks(): Promise<any[]> {
+    async getTasks(): Promise<Task[]> {
         const query = 'SELECT * FROM tasks';
         const result = await this.db.query(query);
         return result.rows;
     }
 
-    public async getTaskById(id: number): Promise<any>{
+    public async getTaskById(id: number): Promise<Task>{
         const query = 'SELECT * FROM tasks WHERE id = $1';
-        const result = await this.db.query(query, [id]);
-        return result.rows;
+        const result = (await this.db.query(query, [id])).rows;
+        return result[0];
     }
 
     public async insertTask(task: CreateTaskDTO): Promise<number>{
@@ -30,16 +32,25 @@ export class TaskService {
         return result.oid;
     }
 
-    public async updateTask(id: number, task: any): Promise<any>{
-        const query = 'UPDATE tasks SET name = $1, description = $2, priority = $3 WHERE id = $4 RETURNING *';
+    public async updateTask(id: number, taskUpdated: UpdateTaskDto): Promise<any>{
+
+        const task = await this.getTaskById(id);
+        task.name = taskUpdated.name ?? task.name;
+        task.description = taskUpdated.description ?? task.description;
+        task.priority = taskUpdated.priority ?? task.priority;
+
+        const query = 
+        'UPDATE tasks SET name = $1, description = $2, priority = $3 WHERE id = $4 RETURNING *';
+
         const result = await this.db.query(query, [task.name, task.description, task.priority, id]);
         return result.rows[0];
     }
 
-    public deleteTask(id: number): string{
-        const array = this.tasks.filter((data) => data.id != id);
-        this.tasks = array;
-        return `Tarea con id: ${id} eliminada`;
+    public async deleteTask(id: number): Promise<boolean>{
+        const sql = 'DELETE FROM tasks WHERE id = $1';
+        const result = await this.db.query(sql, [id]);
+
+        return result.rowCount! > 0;
     }
 
 
