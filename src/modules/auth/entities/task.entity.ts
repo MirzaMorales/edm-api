@@ -3,5 +3,5 @@ export class Task{
     name: string;
     description: string;
     priority: boolean;
-    user_id: number;
+    user_Id: number;
 }

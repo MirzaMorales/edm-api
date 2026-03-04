@@ -20,5 +20,5 @@ export class CreateTaskDTO {
 
     @IsNumber()
     @IsInt()
-    user_id: number;
+    user_Id: number;
 }

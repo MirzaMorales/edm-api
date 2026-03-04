@@ -9,42 +9,42 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 @Controller("/api/task")
 export class TaskController {
 
-    constructor( private readonly taskSvc: TaskService){}
+    constructor(private readonly taskSvc: TaskService) { }
 
     @Get("/get-tasks")
-    @ApiOperation({summary: "Lista las tareas disponibles"})
+    @ApiOperation({ summary: "Lista las tareas disponibles" })
     public async getTasks(): Promise<any[]> {
         return await this.taskSvc.getTasks();
     }
+    
 
     @Get(":id")
-    public async getTaskById(@Param("id", ParseIntPipe) id: number): Promise<Task>{   
+    public async getTaskById(@Param("id", ParseIntPipe) id: number): Promise<Task> {
         var task = await this.taskSvc.getTaskById(id);
 
-        if(task)
+        if (task)
             return task;
         else throw new HttpException(`Task Not Found`, 404);
     }
 
     @Post("/insert-task")
-    public async insertTask(@Body() task: CreateTaskDTO): Promise<any>{
+    public async insertTask(@Body() task: CreateTaskDTO): Promise<any> {
         return await this.taskSvc.insertTask(task);
     }
 
     @Put(":id")
-    public async updateTask(@Param("id", ParseIntPipe) id: number, @Body()task: UpdateTaskDto): Promise<any>{      
+    public async updateTask(@Param("id", ParseIntPipe) id: number, @Body() task: UpdateTaskDto): Promise<any> {
         return await this.taskSvc.updateTask(id, task);
     }
 
     @Delete(":id")
     @HttpCode(HttpStatus.OK)
-    public async deleteTask(@Param("id", ParseIntPipe) id: number): Promise<boolean>{
-        
-        const result = await this.taskSvc.deleteTask(id);
-
-        if(!result)
-        throw new HttpException(`No se puede eliminar la tarea`, 404);
-    
-        return result;
+    public async deleteTask(@Param("id", ParseIntPipe) id: number): Promise<boolean> {
+        try {
+            await this.taskSvc.deleteTask(id);
+            return true;
+        } catch (error) {
+            throw new HttpException(`Tarea no encontrada`, HttpStatus.NOT_FOUND);
+        }
     }
 }
