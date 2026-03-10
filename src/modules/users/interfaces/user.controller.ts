@@ -25,6 +25,15 @@ export class UserController {
         else throw new HttpException(`Usuario no encontrado`, 404);
     }
 
+    @Get("/get-user-by-username/:username")
+    public async getUserByUsername(@Param("username") username: string): Promise<User | null> {
+        const user = await this.userSvc.getUserByUsername(username);
+
+        if (user)
+            return user;
+        else throw new HttpException(`Usuario no encontrado`, 404);
+    }
+
     @Post("/insert-user")
     public async insertUser(@Body() user: CreateUserDTO): Promise<any> {
         return await this.userSvc.insertUser(user);
@@ -46,3 +55,5 @@ export class UserController {
         }
     }
 }
+
+
