@@ -4,13 +4,14 @@ import { CreateUserDTO } from "src/modules/users/dto/create-user.dto";
 import { UpdateUserDto } from "src/modules/users/dto/update-user.dto";
 import { User } from "src/modules/users/entities/user.entity";
 import { PrismaService } from "src/common/services/prisma.service";
+import { UtilService } from "src/common/services/utiles.service";
 
 @Injectable()
 export class UserService {
 
     constructor(
-        @Inject('DATABASE_CONNECTION') private db: Client,
-        private prisma: PrismaService
+        private prisma: PrismaService,
+        private utilService: UtilService
     ) { }
 
     public async getUsers(): Promise<User[]> {
@@ -65,9 +66,16 @@ export class UserService {
     }
 
     public async insertUser(user: CreateUserDTO): Promise<any> {
+
+        const hashedPassword = await this.utilService.hashPassword(user.password);
+
         const newUser = await this.prisma.user.create({
-            data: user
+            data: {
+                ...user,
+                password: hashedPassword
+            }
         });
+
         return newUser;
     }
 

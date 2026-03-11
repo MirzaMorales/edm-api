@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post,  } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UnauthorizedException,  } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthDTO } from "./dto/auth.dto";
 import { ApiOperation } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
+import { UtilService } from "src/common/services/utiles.service";
 
 
 @Controller("/api/auth")
@@ -10,25 +11,35 @@ export class AuthController{
 
     constructor(
         private readonly authSvc: AuthService,
-        private jwtS: JwtService
+        private readonly util: UtilService
     ){}
 
-    @Get("login")
+    @Post("login")
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Verifica las credenciales y crea un JWT" })
-    public async login(@Body()auth: AuthDTO): Promise<string>{
+    public async login(@Body()auth: AuthDTO): Promise<any>{
         const { username, password } = auth;
 
-        const jwt = await this.jwtS.signAsync(auth)
-
         // Verificar usuario y constraseña
+        const user = await this.authSvc.getUserByUserName(username);
+        if(!user) 
+            throw new UnauthorizedException(`Usuario y/o contraseña es  incorrecto`);
 
-        //obtener informacion
+        if(await this.util.checkPassword(password, user.password!)){
+            //obtener informacion de payload
+            const {password, ...payload} = user;
 
-        //generar token de acceso 60s
+            //generar token de acceso 60s
+            const jwt = await this.util.generateJWT(payload);
 
-        //generar refres token por 7d
-        return jwt
+            //generar refres token por 7d
+            const refresh = await this.util.generateJWT(payload, '7d');
+
+            return { access_token: jwt, refresh_token: refresh };
+
+        } else {
+            throw new UnauthorizedException(`Usuario y/o contraseña es  incorrecto`);
+        }
     }
 
     @Get("register")
