@@ -1,19 +1,24 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseIntPipe, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseIntPipe, Post, Put, Req, UseGuards } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDTO } from "src/modules/users/dto/create-user.dto";
 import { UpdateUserDto } from "src/modules/users/dto/update-user.dto";
 import { User } from "src/modules/users/entities/user.entity";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { AuthGuard } from "src/common/guards/auth.guard";
 
 @ApiTags("Usuarios")
-@Controller("/api/users")
+@UseGuards(AuthGuard)
+@Controller("/api/user")
 export class UserController {
 
     constructor(private readonly userSvc: UserService) { }
 
-    @Get("/get-users")
-    public async getUsers(): Promise<any[]> {
-        return await this.userSvc.getUsers();
+    @Get()
+    @ApiOperation({ summary: "Obtiene una lista de todos los usuarios" })
+    public async getUsers(@Req() request: any): Promise<any[]> {
+        var {id} = request['user'];
+        
+        return await this.userSvc.getUsers(id);
     }
 
     @Get(":id")

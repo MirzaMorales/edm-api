@@ -14,7 +14,7 @@ export class UserService {
         private utilService: UtilService
     ) { }
 
-    public async getUsers(): Promise<User[]> {
+    public async getUsers(id: number): Promise<User[]> {
         const users = await this.prisma.user.findMany({
             orderBy: {
                 name: 'asc'
@@ -26,6 +26,11 @@ export class UserService {
                 username: true,
                 password: false,
                 create_at: true,
+            },
+            where: {
+                id: {
+                    not: id
+                }
             }
         });
         return users;
