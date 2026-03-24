@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UnauthorizedException,  } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards,  } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthDTO } from "./dto/auth.dto";
 import { ApiOperation } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { UtilService } from "src/common/services/utiles.service";
+import { AuthGuard } from "src/common/guards/auth.guard";
 
 
 @Controller("/api/auth")
@@ -42,11 +43,13 @@ export class AuthController{
         }
     }
 
-    @Get("register")
+    @Get("me")
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "obtiene el id del usuario y devuelve un JWT" })
-    public getPorfile() {
-
+    public getPorfile(@Req() request: any){
+        const user_Id = request['user'];
+        return user_Id
     }
 
     @Post("refresh")

@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseIntPipe, Post, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, ParseIntPipe, Post, Put, Req, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { TaskService } from "./task.service";
 import { CreateTaskDTO } from "src/modules/task/dto/create-task.dto";
 import { UpdateTaskDto } from "src/modules/task/dto/update.task.dto";
 import { Task } from "src/modules/auth/entities/task.entity";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "src/common/guards/auth.guard";
+import { User } from "@prisma/client";
 
 @ApiTags("Tareas")
 @UseGuards(AuthGuard)
@@ -14,14 +15,16 @@ export class TaskController {
 
     @Get("/get-tasks")
     public async getTasks(@Req() request: any) {
-        const userId = request.user.id; // Extraemos el ID del JWT
-        return await this.taskSvc.getTasks(userId);
+        const user = request['user'] as User;
+
+        return await this.taskSvc.getTasks(user.id);
     }
 
     @Get(":id")
     public async getTaskById(@Param("id", ParseIntPipe) id: number, @Req() request: any) {
-        const userId = request.user.id;
-        const task = await this.taskSvc.getTaskById(id, userId);
+        const user = request['user'] as User;
+
+        var task = await this.taskSvc.getTaskById(id, user.id);
 
         if (!task) throw new HttpException(`Task Not Found or Access Denied`, 404);
         return task;
@@ -29,26 +32,36 @@ export class TaskController {
 
     @Post("/insert-task")
     public async insertTask(@Body() task: CreateTaskDTO, @Req() request: any) {
-        const userId = request.user.id;
-        // Sobrescribimos el user_Id del DTO con el del token por seguridad
-        return await this.taskSvc.insertTask({ ...task, user_Id: userId });
+        // AGREGA EL AWAIT AQUÍ
+        const user = await request['user'];
+
+        console.log('Usuario ya resuelto:', user);
+
+        if (!user || !user.id) {
+            throw new UnauthorizedException('No se pudo obtener el ID del usuario del token');
+        }
+
+        task.user_Id = user.id;
+        return await this.taskSvc.insertTask(task);
     }
 
     @Put(":id")
-    public async updateTask(
-        @Param("id", ParseIntPipe) id: number, 
-        @Body() task: UpdateTaskDto, 
-        @Req() request: any
+    public async updateTask(@Param("id", ParseIntPipe) id: number, @Body() task: UpdateTaskDto, @Req() request: any
     ) {
-        const userId = request.user.id;
-        return await this.taskSvc.updateTask(id, userId, task);
+        const user = await request['user'];
+
+        if (!user || !user.id) throw new UnauthorizedException();
+
+        return await this.taskSvc.updateTask(id, user.id, task);
     }
 
     @Delete(":id")
     @HttpCode(HttpStatus.OK)
     public async deleteTask(@Param("id", ParseIntPipe) id: number, @Req() request: any) {
-        const userId = request.user.id;
-        await this.taskSvc.deleteTask(id, userId);
-        return true;
+        // IMPORTANTE: Esperar a que el usuario se resuelva
+        const user = await request['user'];
+
+        await this.taskSvc.deleteTask(id, user.id);
+        return { message: "Tarea eliminada correctamente", status: true };
     }
 }
