@@ -6,6 +6,13 @@ import { AllExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: 'http://localhost:4200', // El puerto por defecto de tu Angular
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
   app.useGlobalPipes(new ValidationPipe({
     skipNullProperties: true,
     whitelist: true

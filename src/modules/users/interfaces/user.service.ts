@@ -25,6 +25,7 @@ export class UserService {
                 lastname: true,
                 username: true,
                 password: false,
+                hash: false,
                 create_at: true,
             },
             where: {
@@ -47,6 +48,7 @@ export class UserService {
                 lastname: true,
                 username: true,
                 password: false,
+                hash: false,
                 create_at: true,
             }
         });
@@ -72,7 +74,7 @@ export class UserService {
 
     public async insertUser(user: CreateUserDTO): Promise<any> {
 
-        const hashedPassword = await this.utilService.hashPassword(user.password);
+        const hashedPassword = await this.utilService.hash(user.password);
 
         const newUser = await this.prisma.user.create({
             data: {

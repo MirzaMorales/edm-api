@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards,  } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UnauthorizedException, UseGuards,  } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { AuthDTO } from "./dto/auth.dto";
 import { ApiOperation } from "@nestjs/swagger";
 import { JwtService } from "@nestjs/jwt";
 import { UtilService } from "src/common/services/utiles.service";
 import { AuthGuard } from "src/common/guards/auth.guard";
+import { AppException } from "src/common/exceptions/app.exceptions";
 
 
 @Controller("/api/auth")
@@ -30,13 +31,19 @@ export class AuthController{
             //obtener informacion de payload
             const {password, ...payload} = user;
 
-            //generar token de acceso 60s
-            const jwt = await this.util.generateJWT(payload);
-
             //generar refres token por 7d
             const refresh = await this.util.generateJWT(payload, '7d');
+            const hashRT = await this.util.hash(refresh)
+            await this.authSvc.updateHash(payload.id, hashRT)
 
-            return { access_token: jwt, refresh_token: refresh };
+            //generar token de acceso 60s
+            payload.hash = hashRT
+            const jwt = await this.util.generateJWT(payload, '1h');
+
+            return { 
+                access_token: jwt, 
+                refresh_token: hashRT
+            };
 
         } else {
             throw new UnauthorizedException(`Usuario y/o contraseña es  incorrecto`);
@@ -47,23 +54,41 @@ export class AuthController{
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "obtiene el id del usuario y devuelve un JWT" })
-    public getPorfile(@Req() request: any){
+    public async getProfile(@Req() request: any){
         const user_Id = request['user'];
         return user_Id
     }
 
     @Post("refresh")
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Refresca el token JWT" })
-    public refreshToken() {
+    public async refreshToken(@Req() request: any) {
+        //Obtener usuario en sesion
+        const userSession = request['user'];
+        const user = await this.authSvc.getUserById(userSession.id);
+
+        if( !user || !user.hash) throw new AppException('Acceso Denegado', HttpStatus.FORBIDDEN, '0');
+
+        //comparar el token recibido con el guardado
+        if(userSession.hash != user.hash) throw new AppException('Acceso Denegado', HttpStatus.FORBIDDEN, '0');
+
+        //si el token es valido se generan nuevos tokens
+        return {
+            token : '',
+            refresh_token: ''
+        }
 
     }
 
     @Post("logout")
-    @HttpCode(204)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(AuthGuard)
     @ApiOperation({ summary: "Cierra la sesión del usuario.Invalida los tokens en el lado del servidor y limpia las cookies" })
-    public logout() {
-
+    public logout(@Req() request: any) {
+        const session = request['user'];
+        const user = this.authSvc.updateHash(session.id, null)
+        return user;
     }
 
 

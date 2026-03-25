@@ -16,6 +16,22 @@ export class AuthService{
         })
     }
 
+    public async getUserById(id : number): Promise<User | null>{
+
+        return await this.prisma.user.findFirst({
+            where: {
+                id 
+            }
+        })
+    }
+
+    public async updateHash(user_Id: number, hash: string | null): Promise<User>{
+        return await this.prisma.user.update({
+            where: { id: user_Id },
+            data: { hash }
+        });
+    }
+
     public logIn(): string{
         return "Login exitoso";
     }

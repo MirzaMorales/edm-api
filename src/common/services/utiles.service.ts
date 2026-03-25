@@ -7,10 +7,10 @@ export class UtilService {
 
     constructor(private readonly jwtSvc : JwtService) { }
 
-    public async hashPassword(password: string): Promise<string> {
+    public async hash(text: string): Promise<string> {
         const bcrypt = await import('bcrypt');
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(text, saltRounds);
         return hashedPassword;
     }
 
@@ -19,7 +19,7 @@ export class UtilService {
         return await bcrypt.compare(password, hashedPassword);
     }
 
-    public async generateJWT(payload: any, expiresIn: any = '60s'): Promise<string> {
+    public async generateJWT(payload: any, expiresIn: any = '1h'): Promise<string> {
         return await this.jwtSvc.signAsync(payload, {secret: process.env.JWT_SECRET, expiresIn: expiresIn});
     }
 
