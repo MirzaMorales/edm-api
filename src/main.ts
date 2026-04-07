@@ -2,13 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AllExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: 'http://localhost:4200', // El puerto por defecto de tu Angular
+    origin: 'http://localhost:4200',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -18,7 +17,6 @@ async function bootstrap() {
     whitelist: true
   }));
 
-  app.useGlobalFilters(new AllExceptionFilter())
   //Configuracion de swagger
 
   const config = new DocumentBuilder()
