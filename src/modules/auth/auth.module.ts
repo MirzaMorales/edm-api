@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -13,11 +12,8 @@ import { PrismaService } from 'src/common/services/prisma.service';
       secret: process.env.e,
       signOptions: { expiresIn: '60s' },
     }),
-
   ],
   controllers: [AuthController],
   providers: [AuthService, UtilService, PrismaService],
 })
-export class AuthModule {
-
-}
+export class AuthModule {}
