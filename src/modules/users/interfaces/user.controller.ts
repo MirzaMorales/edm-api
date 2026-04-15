@@ -56,6 +56,13 @@ export class UserController {
     else throw new HttpException(`Usuario no encontrado`, 404);
   }
 
+  @Get('/check-username/:username')
+  @ApiOperation({ summary: 'Verifica si un username ya existe (Público)' })
+  public async checkUsername(@Param('username') username: string): Promise<{ available: boolean }> {
+    const user = await this.userSvc.getUserByUsername(username);
+    return { available: !user };
+  }
+
   @Post('/insert-user')
   @ApiOperation({ summary: 'Crea un nuevo usuario (Público)' })
   public async insertUser(@Body() user: CreateUserDTO): Promise<any> {

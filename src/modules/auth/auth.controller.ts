@@ -6,10 +6,12 @@ import {
   HttpStatus,
   Param,
   Post,
+  Res,
   Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDTO } from './dto/auth.dto';
 import { ApiOperation } from '@nestjs/swagger';
@@ -28,7 +30,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verifica las credenciales y crea un JWT' })
-  public async login(@Body() auth: AuthDTO): Promise<any> {
+  public async login(@Body() auth: AuthDTO, @Res({ passthrough: true }) res: Response): Promise<any> {
     const { username, password } = auth;
 
     // Verificar usuario y constraseña
@@ -49,9 +51,24 @@ export class AuthController {
       payload.hash = hashRT;
       const jwt = await this.util.generateJWT(payload, '1h');
 
+      // Configurar cookies seguras
+      res.cookie('at', jwt, {
+        httpOnly: true,
+        secure: false, // Cambiar a true en producción con HTTPS
+        sameSite: 'lax',
+        maxAge: 3600000 // 1 hora
+      });
+
+      res.cookie('rt', hashRT, {
+        httpOnly: true,
+        secure: false, // Cambiar a true en producción con HTTPS
+        sameSite: 'lax',
+        maxAge: 604800000 // 7 días
+      });
+
       return {
-        access_token: jwt,
-        refresh_token: hashRT,
+        message: 'Login exitoso',
+        user: payload
       };
     } else {
       throw new UnauthorizedException(`Usuario y/o contraseña es  incorrecto`);
@@ -104,9 +121,13 @@ export class AuthController {
     summary:
       'Cierra la sesión del usuario.Invalida los tokens en el lado del servidor y limpia las cookies',
   })
-  public async logout(@Req() request: any) {
+  public async logout(@Req() request: any, @Res({ passthrough: true }) res: Response) {
     const session = request['user'];
-    const user = await this.authSvc.updateHash(session.id, null);
-    return user;
+    await this.authSvc.updateHash(session.id, null);
+    
+    res.clearCookie('at');
+    res.clearCookie('rt');
+    
+    return { message: 'Sesión cerrada' };
   }
 }
